@@ -19,21 +19,24 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#define MAX_LEN 512
-#define MAXARGS 10
-#define ARGLEN 30
+#define MAX_LEN 512    //sets limit for commad input length
+#define MAXARGS 10     // maximum arguments
+#define ARGLEN 30      // arguments length
 #define PROMPT "NewShell:- "
 
-int execute(char* arglist[]);
+
+
+int execute(char* arglist[]);  
 char** tokenize(char* cmdline);
 char* read_cmd(char*, FILE*);
 int main(){
    char *cmdline;
    char** arglist;
    char* prompt = PROMPT;   
-   while((cmdline = read_cmd(prompt,stdin)) != NULL){
-      if((arglist = tokenize(cmdline)) != NULL){
-            execute(arglist);
+   // infinte loop
+   while((cmdline = read_cmd(prompt,stdin)) != NULL){  // reads input from stdin and returns it
+      if((arglist = tokenize(cmdline)) != NULL){  // tokenizing the command
+            execute(arglist);  // function that executes the command
        //  need to free arglist
          for(int j=0; j < MAXARGS+1; j++)
 	         free(arglist[j]);
@@ -44,15 +47,15 @@ int main(){
    printf("\n");
    return 0;
 }
-int execute(char* arglist[]){
+int execute(char* arglist[]){  
    int status;
-   int cpid = fork();
+   int cpid = fork(); // use of fork to create a child
    switch(cpid){
       case -1:
          perror("fork failed");
 	      exit(1);
       case 0:
-	      execvp(arglist[0], arglist);
+	      execvp(arglist[0], arglist); // child runs the command using execvp
  	      perror("Command not found...");
 	      exit(1);
       default:
@@ -62,7 +65,7 @@ int execute(char* arglist[]){
    }
 }
 char** tokenize(char* cmdline){
-//allocate memory
+//allocate memory to store command arguments
    char** arglist = (char**)malloc(sizeof(char*)* (MAXARGS+1));
    for(int j=0; j < MAXARGS+1; j++){
 	   arglist[j] = (char*)malloc(sizeof(char)* ARGLEN);
@@ -79,7 +82,7 @@ char** tokenize(char* cmdline){
           cp++;
       start = cp; //start of the word
       len = 1;
-      //find the end of the word
+      //find the end of the word (Splits cmdline into tokens based on spaces or tabs, storing each argument in arglist.)
       while(*++cp != '\0' && !(*cp ==' ' || *cp == '\t'))
          len++;
       strncpy(arglist[argnum], start, len);
@@ -95,7 +98,7 @@ char* read_cmd(char* prompt, FILE* fp){
   int c; //input character
    int pos = 0; //position of character in cmdline
    char* cmdline = (char*) malloc(sizeof(char)*MAX_LEN);
-   while((c = getc(fp)) != EOF){
+   while((c = getc(fp)) != EOF){ // f the user presses Ctrl+D (EOF), getc(fp) returns EOF, causing read_cmd to return NULL and allowing the shell to exit.
        if(c == '\n')
 	  break;
        cmdline[pos++] = c;
@@ -104,5 +107,5 @@ char* read_cmd(char* prompt, FILE* fp){
    if(c == EOF && pos == 0) 
       return NULL;
    cmdline[pos] = '\0';
-   return cmdline;
+   return cmdline;  //eturns a dynamically allocated cmdline string containing the command typed by the user.
 }
