@@ -9,25 +9,32 @@
 #define MAX_COMMAND_LENGTH 1024
 #define MAX_BACKGROUND_PROCESSES 100
 
-typedef struct {
+
+// backgorund process tracking
+
+typedef struct { // hold information about each background job
     pid_t pid;
     char command[MAX_COMMAND_LENGTH];
 } BackgroundProcess;
 
+// backgorung process array stores max background processes
 BackgroundProcess background_processes[MAX_BACKGROUND_PROCESSES];
 int background_count = 0;
 
 // Function to list all running background jobs
 void list_jobs() {
     printf("Background jobs:\n");
+    // iterates through background processes array and 
+    // print each process ID (pid) and associated command
     for (int i = 0; i < background_count; i++) {
         printf("[%d] %d %s\n", i+1, background_processes[i].pid, background_processes[i].command);
     }
 }
 
-// Function to kill a background process
+// Function to kill a background process bases on job id
 void kill_job(int job_number) {
-    if (job_number > 0 && job_number <= background_count) {
+    if (job_number > 0 && job_number <= background_count) {  // check if job number is valid
+        // If valid, retrieves the pid and attempts to terminate the process with SIGKILL.
         pid_t pid = background_processes[job_number - 1].pid;
         if (kill(pid, SIGKILL) == 0) {
             printf("Process %d terminated.\n", pid);
@@ -41,7 +48,8 @@ void kill_job(int job_number) {
     } else {
         printf("Invalid job number.\n");
     }
-}
+}   // f successful, the function removes the process from the background_processes array, 
+    // shifts remaining jobs up in the list, and decrements background_count.
 
 // Function to display available built-in commands
 void display_help() {
@@ -84,6 +92,8 @@ int execute_builtin_command(char **args) {
     return 0;
 }
 
+
+// executing external commands
 void execute_command(char **args) {
     if (execute_builtin_command(args)) {
         return;
@@ -101,24 +111,27 @@ void execute_command(char **args) {
     }
 }
 
-// Shell loop to handle commands
+// Shell loop to handle input and output commands
 void shell_loop() {
     char line[MAX_COMMAND_LENGTH];
     char *args[MAX_COMMAND_LENGTH / 2 + 1];
 
     while (1) {
         printf("> ");
-        if (!fgets(line, sizeof(line), stdin)) {
+        if (!fgets(line, sizeof(line), stdin)) {  // read input usinf fgets
             break;
         }
+        // trim to new line character from end of input
         line[strcspn(line, "\n")] = '\0';
-
+        
+        // Tokenizes the input into arguments using strtok
         int i = 0;
         args[i] = strtok(line, " ");
         while (args[i] != NULL) {
             args[++i] = strtok(NULL, " ");
         }
 
+        // check if execute_command is not empty
         if (args[0] != NULL) {
             execute_command(args);
         }
