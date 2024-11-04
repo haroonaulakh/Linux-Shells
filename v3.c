@@ -5,7 +5,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <fcntl.h>
-#include <signal.h>
+#include <signal.h> // provides functionality to handle signals (manage SIGCHLD, which is sent when a child terminates)
 
 #define MAX_LEN 512
 #define MAXARGS 10
@@ -23,7 +23,7 @@ int main() {
     char *cmdline;
     char* prompt = PROMPT;
 
-    // Set up the SIGCHLD handler to reap background processes
+    // Set up the SIGCHLD handler to reap background processes (ecnusres no zombie processes)
     signal(SIGCHLD, sigchld_handler);
 
     while ((cmdline = read_cmd(prompt, stdin)) != NULL) {
@@ -34,9 +34,9 @@ int main() {
 
         char** arglist = tokenize(cmdline);
         if (arglist != NULL) {
-            int background = 0;
+            int background = 0;  // check if a command should run in the background.
 
-            // Check if the last argument is "&" for background execution
+            // Check if the last argument is "&" for background execution, set backforund to 1
             for (int i = 0; arglist[i] != NULL; i++) {
                 if (strcmp(arglist[i], "&") == 0 && arglist[i + 1] == NULL) {
                     background = 1;
@@ -47,7 +47,7 @@ int main() {
             }
 
             handle_redirection(arglist);
-            execute(arglist, background);
+            execute(arglist, background); // called with nackground flag to handle background execution
 
             // Free allocated memory
             for (int j = 0; j < MAXARGS + 1; j++)
@@ -60,6 +60,8 @@ int main() {
     return 0;
 }
 
+// This function creates a child process using fork() 
+// and executes the command in arglist.
 int execute(char* arglist[], int background) {
     int status;
     int cpid = fork();
@@ -72,16 +74,21 @@ int execute(char* arglist[], int background) {
             perror("Command not found...");
             exit(1);
         default:
-            if (!background) {
+            if (!background) {  // if background is 0
                 // Wait for the process if it's not running in the background
+                // the parent process waits for the child process to complete before continuing.
                 waitpid(cpid, &status, 0);
-            } else {
-                printf("[1] %d\n", cpid);  // Print background process ID
+            } else {  // background is 1
+                // the child process runs in the background.
+                //  parent process does not wait for it to complete
+                // 
+                printf("[1] %d\n", cpid);  // Print background child process ID
             }
             return 0;
     }
 }
 
+// tokenizing 
 char** tokenize(char* cmdline) {
     char** arglist = (char**)malloc(sizeof(char*) * (MAXARGS + 1));
     int argnum = 0;
