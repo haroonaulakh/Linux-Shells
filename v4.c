@@ -6,7 +6,8 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <signal.h>
-#include <readline/readline.h>
+// livraries to provide command line history and editing features
+#include <readline/readline.h>   
 #include <readline/history.h>
 
 #define MAX_LEN 512
@@ -32,7 +33,7 @@ int main() {
 
     // Initialize history file and set maximum history size
     using_history();
-    stifle_history(HISTORY_SIZE);
+    stifle_history(HISTORY_SIZE);  // 10 here
 
     while ((cmdline = read_cmd(prompt)) != NULL) {
         if (handle_pipes(cmdline) == 1) {
@@ -111,6 +112,8 @@ char* read_cmd(char* prompt) {
     }
 
     // Handle history commands (!number)
+    // he shell supports commands like !number to
+    // recall specific commands from history (!2)
     if (cmdline[0] == '!') {
         int index;
         if (cmdline[1] == '-') {
@@ -120,11 +123,13 @@ char* read_cmd(char* prompt) {
         }
 
         free(cmdline);
+        // If a history command is detected, 
+        // the shell retrieves the command from history using
         cmdline = get_history_command(index);
     }
 
     if (cmdline != NULL && *cmdline) {
-        add_history(cmdline);
+        add_history(cmdline); // add each new commmand to the hostory list after it's executed
     }
 
     return cmdline;
